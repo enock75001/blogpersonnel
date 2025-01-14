@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Sidick</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        header {
+            background-color: #343a40;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .quote-card {
+            background-color: #d4edda;
+            color: #155724;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .quote-card:hover {
+            transform: scale(1.02);
+            transition: transform 0.3s ease;
+        }
+        .blockquote {
+            font-family: 'Georgia', serif;
+            font-size: 1.5rem;
+            font-style: italic;
+            text-align: center;
+        }
+        .blockquote-footer {
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: #5a6268;
+            border: none;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border: none;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border: none;
+        }
+        .btn-share {
+            background-color: #007bff;
+            border: none;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <!-- Section En-tête -->
+        <header class="d-flex align-items-center mb-4 p-4" style="background: linear-gradient(135deg, #6c757d, #343a40); border-radius: 15px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);">
+            <img src="photo.jpg" alt="Votre Photo" class="rounded-circle me-3" style="width: 150px; height: 150px; border: 5px solid #fff; box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);">
+            <div>
+                <h1 class="text-white mb-0" style="font-size: 2.5rem;">Blog Personnel</h1>
+                <p class="text-muted" style="font-size: 1.2rem;">Créé par ABOUBACAR SIDIQ</p>
+            </div>
+        </header>
+
+        <!-- Section Connexion/Inscription -->
+        <div id="auth-section" class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Connexion Administrateur</h5>
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="login-email" class="form-label">Email</label>
+                        <input type="email" id="login-email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="login-password" class="form-label">Mot de passe</label>
+                        <input type="password" id="login-password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Se connecter</button>
+                    <button type="button" class="btn btn-link mt-2" id="show-register-form">Pas encore inscrit ? Inscrivez-vous ici</button>
+                </form>
+
+        <!-- Message de Bienvenue -->
+        <div id="welcome-message" class="alert alert-success mt-4" style="display: none;">
+            <h4>Bienvenue sur votre site, Mr Sidick !</h4>
+        </div>
+
+        <!-- Section pour l'administrateur (ajouter une citation et se déconnecter) -->
+        <div id="quote-section" class="card mt-4" style="display: none;">
+            <div class="card-body">
+                <h5 class="card-title">Ajouter une citation</h5>
+                <form id="add-quote-form">
+                    <div class="mb-3">
+                        <label for="quote" class="form-label">Citation</label>
+                        <textarea id="quote" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="author" class="form-label">Auteur</label>
+                        <input type="text" id="author" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quote-audio" class="form-label">Audio (optionnel)</label>
+                        <input type="file" id="quote-audio" class="form-control" accept="audio/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                    <button id="logout-button" class="btn btn-secondary mt-3" onclick="logout()">Se déconnecter</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Liste des citations -->
+        <div id="quotes-list" class="mt-5">
+            <h3 class="text-center">Liste des Citations</h3>
+            <div id="quotes-container" class="d-flex flex-column align-items-center"></div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
+
+    <script>
+        // Configuration Firebase
+        const firebaseConfig = {
+  apiKey: "AIzaSyBHP1Li2XbSD1XAvQe_DIv8dGGRkeiMdMo",
+  authDomain: "blogpersonnel.firebaseapp.com",
+  projectId: "blogpersonnel",
+  storageBucket: "blogpersonnel.firebasestorage.app",
+  messagingSenderId: "698510119085",
+  appId: "1:698510119085:web:a03cb01db9448130457624",
+  measurementId: "G-YMC99CXPYL"
+};
+        
+        // Initialiser Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        const quotesContainer = document.getElementById('quotes-container');
+        const addQuoteForm = document.getElementById('add-quote-form');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('signup-form');
+        const authSection = document.getElementById('auth-section');
+        const quoteSection = document.getElementById('quote-section');
+        const loginErrorMessage = document.getElementById('login-error-message');
+        const registerErrorMessage = document.getElementById('register-error-message');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const showRegisterForm = document.getElementById('show-register-form');
+        const showLoginForm = document.getElementById('show-login-form');
+        const logoutButton = document.getElementById('logout-button');
+        const quotesList = document.getElementById('quotes-list');
+
+        // Fonction d'affichage des citations
+        function renderQuotes() {
+            quotesContainer.innerHTML = '';
+            db.collection("quotes").get().then((querySnapshot) => {
+                querySnapshot.forEach((doc) => {
+                    const quote = doc.data();
+                    const quoteCard = document.createElement('div');
+                    quoteCard.classList.add('card', 'quote-card', 'mb-4', 'p-3', 'text-center', 'w-75');
+                    const quoteDate = new Date(quote.date.seconds * 1000).toLocaleString();
+
+                    let audioElement = '';
+                    if (quote.audio) {
+                        audioElement = `<audio controls><source src="${quote.audio}" type="audio/mpeg">Votre navigateur ne supporte pas l'élément audio.</audio>`;
+                    }
+
+                    quoteCard.innerHTML = `
+                        <div class="card-body">
+                            <blockquote class="blockquote mb-0">
+                                <p>${quote.text}</p>
+                                <footer class="blockquote-footer">${quote.author}</footer>
+                                <small class="text-muted">Ajoutée le: ${quoteDate}</small>
+                            </blockquote>
+                            ${audioElement}
+                        </div>
+                    `;
+                    quotesContainer.appendChild(quoteCard);
+                });
+            });
+        }
+
+        // Fonction pour ajouter une citation
+        function addQuote(event) {
+            event.preventDefault();
+            const quoteText = document.getElementById('quote').value;
+            const quoteAuthor = document.getElementById('author').value;
+            const audioFile = document.getElementById('quote-audio').files[0]; 
+
+            // Si aucun texte ni audio n'est ajouté, afficher une alerte
+            if (!quoteText && !audioFile) {
+                alert("Veuillez remplir au moins un champ (texte ou audio) !");
+                return;
+            }
+
+            let audioURL = "";
+            if (audioFile) {
+                const storageRef = storage.ref();
+                const audioRef = storageRef.child('audios/' + audioFile.name);
+
+                audioRef.put(audioFile).then((snapshot) => {
+                    audioRef.getDownloadURL().then((url) => {
+                        audioURL = url;
+                        saveQuote(quoteText, quoteAuthor, audioURL);
+                    });
+                }).catch((error) => {
+                    console.error("Erreur lors du téléchargement de l'audio :", error);
+                });
+            } else {
+                saveQuote(quoteText, quoteAuthor, audioURL);
+            }
+        }
+
+        // Fonction pour enregistrer la citation
+        function saveQuote(quoteText, quoteAuthor, audioURL) {
+            db.collection("quotes").add({
+                text: quoteText,
+                author: quoteAuthor,
+                audio: audioURL, 
+                date: firebase.firestore.Timestamp.now()
+            }).then(() => {
+                renderQuotes(); 
+                addQuoteForm.reset(); 
+            });
+        }
+
+        // Écouteur de l'événement pour le formulaire d'ajout de citation
+        addQuoteForm.addEventListener('submit', addQuote);
+
+        // Fonction de connexion de l'administrateur
+        loginForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            auth.signInWithEmailAndPassword(email, password).then(() => {
+                authSection.style.display = 'none';
+                welcomeMessage.style.display = 'block';
+                quoteSection.style.display = 'block';
+                renderQuotes(); 
+            }).catch((error) => {
+                loginErrorMessage.style.display = 'block';
+            });
+        });
+
+        // Fonction d'inscription de l'administrateur
+        registerForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+
+            if (password !== confirmPassword) {
+                registerErrorMessage.style.display = 'block';
+                return;
+            }
+
+            auth.createUserWithEmailAndPassword(email, password).then(() => {
+                authSection.style.display = 'none';
+                welcomeMessage.style.display = 'block';
+                quoteSection.style.display = 'block';
+            }).catch((error) => {
+                registerErrorMessage.style.display = 'block';
+            });
+        });
+
+        // Fonction de déconnexion
+        function logout() {
+            auth.signOut().then(() => {
+                authSection.style.display = 'block';
+                welcomeMessage.style.display = 'none';
+                quoteSection.style.display = 'none';
+            });
+        }
+
+        // Afficher le formulaire d'inscription
+        showRegisterForm.addEventListener('click', () => {
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+        });
+
+        // Afficher le formulaire de connexion
+        showLoginForm.addEventListener('click', () => {
+            registerForm.style.display = 'none';
+            loginForm.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
