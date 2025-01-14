@@ -8,12 +8,18 @@
     <style>
         body {
             background-color: #f8f9fa;
+            font-family: 'Roboto', sans-serif;
         }
         header {
             background-color: #343a40;
             color: white;
             padding: 20px;
             border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.5s ease;
+        }
+        header:hover {
+            transform: scale(1.02);
         }
         .quote-card {
             background-color: #d4edda;
@@ -24,7 +30,7 @@
             animation: fadeIn 0.5s ease-in-out;
         }
         .quote-card:hover {
-            transform: scale(1.02);
+            transform: scale(1.05);
             transition: transform 0.3s ease;
         }
         .blockquote {
@@ -32,11 +38,20 @@
             font-size: 1.5rem;
             font-style: italic;
             text-align: center;
+            animation: slideUp 0.5s ease;
         }
         .blockquote-footer {
             text-align: center;
         }
-        .btn-primary {
+        .btn-primary, .btn-secondary {
+            background-color: #007bff;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary:hover, .btn-secondary:hover {
+            background-color: #0056b3;
+        }
+        .btn-share {
             background-color: #5a6268;
             border: none;
         }
@@ -44,13 +59,12 @@
             background-color: #dc3545;
             border: none;
         }
-        .btn-secondary {
-            background-color: #6c757d;
-            border: none;
+        .card-body {
+            transition: all 0.3s ease;
         }
-        .btn-share {
-            background-color: #007bff;
-            border: none;
+        .card-body:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
         @keyframes fadeIn {
             from {
@@ -61,6 +75,22 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .container {
+            padding: 20px;
+        }
+        .alert {
+            display: none;
         }
     </style>
 </head>
@@ -75,34 +105,29 @@
             </div>
         </header>
 
-       <!-- Formulaire de connexion -->
-<div id="auth-section" class="card mt-4">
-    <div class="card-body">
-        <h5 class="card-title">Connexion Administrateur</h5>
-        <form id="login-form">
-            <div class="mb-3">
-                <label for="login-email" class="form-label">Email</label>
-                <input type="email" id="login-email" class="form-control" required>
+        <!-- Formulaire de connexion -->
+        <div id="auth-section" class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Connexion Administrateur</h5>
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="login-email" class="form-label">Email</label>
+                        <input type="email" id="login-email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="login-password" class="form-label">Mot de passe</label>
+                        <input type="password" id="login-password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Se connecter</button>
+                </form>
+                <div class="mt-3">
+                    <p>Pas encore inscrit ? <a href="registre.html" id="signup-link">Inscrivez-vous ici</a></p>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="login-password" class="form-label">Mot de passe</label>
-                <input type="password" id="login-password" class="form-control" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Se connecter</button>
-        </form>
-
-        <!-- Lien pour accéder à la page d'inscription -->
-        <div class="mt-3">
-            <p>Pas encore inscrit ? 
-                <a href="registre.html" id="signup-link">Inscrivez-vous ici</a>
-            </p>
         </div>
-    </div>
-</div>
-
 
         <!-- Message de Bienvenue -->
-        <div id="welcome-message" class="alert alert-success mt-4" style="display: none;">
+        <div id="welcome-message" class="alert alert-success mt-4">
             <h4>Bienvenue sur votre site, Mr Sidick !</h4>
         </div>
 
@@ -145,179 +170,79 @@
     <script>
         // Configuration Firebase
         const firebaseConfig = {
-  apiKey: "AIzaSyBHP1Li2XbSD1XAvQe_DIv8dGGRkeiMdMo",
-  authDomain: "blogpersonnel.firebaseapp.com",
-  projectId: "blogpersonnel",
-  storageBucket: "blogpersonnel.firebasestorage.app",
-  messagingSenderId: "698510119085",
-  appId: "1:698510119085:web:a03cb01db9448130457624",
-  measurementId: "G-YMC99CXPYL"
-};
-        
-        // Initialisation de Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+            apiKey: "AIzaSyBHP1Li2XbSD1XAvQe_DIv8dGGRkeiMdMo",
+            authDomain: "blogpersonnel.firebaseapp.com",
+            projectId: "blogpersonnel",
+            storageBucket: "blogpersonnel.firebasestorage.app",
+            messagingSenderId: "698510119085",
+            appId: "1:698510119085:web:a03cb01db9448130457624",
+            measurementId: "G-YMC99CXPYL"
+        };
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
 
-// Sélection des éléments DOM
-const loginForm = document.getElementById('login-form');
-const authSection = document.getElementById('auth-section');
-const quoteSection = document.getElementById('quote-section');
-const welcomeMessage = document.getElementById('welcome-message');
-const quotesContainer = document.getElementById('quotes-container');
+        const loginForm = document.getElementById('login-form');
+        const authSection = document.getElementById('auth-section');
+        const quoteSection = document.getElementById('quote-section');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const quotesContainer = document.getElementById('quotes-container');
 
-// Fonction d'affichage des erreurs
-function displayError(message) {
-    alert(message); // Simple pour le moment, peut être remplacé par un affichage dans la page
-}
-
-// Gestion de la connexion
-loginForm.addEventListener('submit', function (event) {
-    event.preventDefault();
-
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-
-    auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            const user = userCredential.user;
-            if (user.email === "franckenock78@gmail.com") {
-                // Administrateur connecté
-                authSection.style.display = 'none';
-                welcomeMessage.style.display = 'block';
-                quoteSection.style.display = 'block';
-                renderQuotes();
-            } else {
-                alert("Accès refusé : Vous n'êtes pas administrateur !");
-                auth.signOut();
-            }
-        })
-        .catch((error) => {
-            console.error("Erreur lors de la connexion :", error);
-            displayError("Email ou mot de passe incorrect. Veuillez réessayer.");
-        });
-});
-
-// Affichage des citations
-function renderQuotes() {
-    quotesContainer.innerHTML = '';
-    db.collection("quotes")
-        .orderBy("date", "desc")
-        .get()
-        .then((querySnapshot) => {
-            querySnapshot.forEach((doc) => {
-                const quote = doc.data();
-                const quoteCard = document.createElement('div');
-                quoteCard.classList.add('card', 'quote-card', 'mb-4', 'p-3', 'text-center', 'w-75');
-
-                const quoteDate = new Date(quote.date.seconds * 1000).toLocaleString();
-
-                let audioElement = '';
-                if (quote.audio) {
-                    audioElement = `<audio controls><source src="${quote.audio}" type="audio/mpeg">Votre navigateur ne supporte pas l'élément audio.</audio>`;
-                }
-
-                quoteCard.innerHTML = `
-                    <div class="card-body">
-                        <blockquote class="blockquote mb-0">
-                            <p>${quote.text}</p>
-                            <footer class="blockquote-footer">${quote.author}</footer>
-                            <small class="text-muted">Ajoutée le: ${quoteDate}</small>
-                        </blockquote>
-                        ${audioElement}
-                    </div>
-                `;
-                quotesContainer.appendChild(quoteCard);
-            });
-        });
-}
-
-        // Fonction pour ajouter une citation
-        function addQuote(event) {
-            event.preventDefault();
-            const quoteText = document.getElementById('quote').value;
-            const quoteAuthor = document.getElementById('author').value;
-            const audioFile = document.getElementById('quote-audio').files[0]; 
-
-            // Si aucun texte ni audio n'est ajouté, afficher une alerte
-            if (!quoteText && !audioFile) {
-                alert("Veuillez remplir au moins un champ (texte ou audio) !");
-                return;
-            }
-
-            let audioURL = "";
-            if (audioFile) {
-                const storageRef = storage.ref();
-                const audioRef = storageRef.child('audios/' + audioFile.name);
-
-                audioRef.put(audioFile).then((snapshot) => {
-                    audioRef.getDownloadURL().then((url) => {
-                        audioURL = url;
-                        saveQuote(quoteText, quoteAuthor, audioURL);
-                    });
-                }).catch((error) => {
-                    console.error("Erreur lors du téléchargement de l'audio :", error);
-                });
-            } else {
-                saveQuote(quoteText, quoteAuthor, audioURL);
-            }
-        }
-
-        // Fonction pour enregistrer la citation
-        function saveQuote(quoteText, quoteAuthor, audioURL) {
-            db.collection("quotes").add({
-                text: quoteText,
-                author: quoteAuthor,
-                audio: audioURL, 
-                date: firebase.firestore.Timestamp.now()
-            }).then(() => {
-                renderQuotes(); 
-                addQuoteForm.reset(); 
-            });
-        }
-
-        // Écouteur de l'événement pour le formulaire d'ajout de citation
-        addQuoteForm.addEventListener('submit', addQuote);
-
-        // Fonction de connexion de l'administrateur
-        loginForm.addEventListener('submit', function(event) {
+        loginForm.addEventListener('submit', function (event) {
             event.preventDefault();
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
-            auth.signInWithEmailAndPassword(email, password).then(() => {
-                authSection.style.display = 'none';
-                welcomeMessage.style.display = 'block';
-                quoteSection.style.display = 'block';
-                renderQuotes(); 
-            }).catch((error) => {
-                loginErrorMessage.style.display = 'block';
-            });
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    if (user.email === "franckenock78@gmail.com") {
+                        authSection.style.display = 'none';
+                        welcomeMessage.style.display = 'block';
+                        quoteSection.style.display = 'block';
+                        renderQuotes();
+                    } else {
+                        alert("Accès refusé : Vous n'êtes pas administrateur !");
+                        auth.signOut();
+                    }
+                })
+                .catch((error) => {
+                    console.error("Erreur lors de la connexion :", error);
+                    alert("Email ou mot de passe incorrect.");
+                });
         });
 
-        // Fonction d'inscription de l'administrateur
-        registerForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const confirmPassword = document.getElementById('register-confirm-password').value;
+        function renderQuotes() {
+            quotesContainer.innerHTML = '';
+            db.collection("quotes").orderBy("date", "desc").get()
+                .then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        const quote = doc.data();
+                        const quoteCard = document.createElement('div');
+                        quoteCard.classList.add('card', 'quote-card', 'mb-4', 'p-3', 'text-center', 'w-75');
+                        const quoteDate = new Date(quote.date.seconds * 1000).toLocaleString();
 
-            if (password !== confirmPassword) {
-                registerErrorMessage.style.display = 'block';
-                return;
-            }
+                        let audioElement = '';
+                        if (quote.audio) {
+                            audioElement = `<audio controls><source src="${quote.audio}" type="audio/mpeg">Votre navigateur ne supporte pas l'élément audio.</audio>`;
+                        }
 
-            auth.createUserWithEmailAndPassword(email, password).then(() => {
-                authSection.style.display = 'none';
-                welcomeMessage.style.display = 'block';
-                quoteSection.style.display = 'block';
-            }).catch((error) => {
-                registerErrorMessage.style.display = 'block';
-            });
-        });
+                        quoteCard.innerHTML = `
+                            <div class="card-body">
+                                <blockquote class="blockquote mb-0">
+                                    <p>${quote.text}</p>
+                                    <footer class="blockquote-footer">${quote.author}</footer>
+                                    <small class="text-muted">Ajoutée le: ${quoteDate}</small>
+                                </blockquote>
+                                ${audioElement}
+                            </div>
+                        `;
+                        quotesContainer.appendChild(quoteCard);
+                    });
+                });
+        }
 
-        // Fonction de déconnexion
         function logout() {
             auth.signOut().then(() => {
                 authSection.style.display = 'block';
@@ -325,18 +250,6 @@ function renderQuotes() {
                 quoteSection.style.display = 'none';
             });
         }
-
-        // Afficher le formulaire d'inscription
-        showRegisterForm.addEventListener('click', () => {
-            loginForm.style.display = 'none';
-            registerForm.style.display = 'block';
-        });
-
-        // Afficher le formulaire de connexion
-        showLoginForm.addEventListener('click', () => {
-            registerForm.style.display = 'none';
-            loginForm.style.display = 'block';
-        });
     </script>
 </body>
 </html>
