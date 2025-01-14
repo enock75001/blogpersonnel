@@ -145,55 +145,84 @@
   measurementId: "G-YMC99CXPYL"
 };
         
-        // Initialiser Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const storage = firebase.storage();
+        // Initialisation de Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
 
-        const quotesContainer = document.getElementById('quotes-container');
-        const addQuoteForm = document.getElementById('add-quote-form');
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('signup-form');
-        const authSection = document.getElementById('auth-section');
-        const quoteSection = document.getElementById('quote-section');
-        const loginErrorMessage = document.getElementById('login-error-message');
-        const registerErrorMessage = document.getElementById('register-error-message');
-        const welcomeMessage = document.getElementById('welcome-message');
-        const showRegisterForm = document.getElementById('show-register-form');
-        const showLoginForm = document.getElementById('show-login-form');
-        const logoutButton = document.getElementById('logout-button');
-        const quotesList = document.getElementById('quotes-list');
+// Sélection des éléments DOM
+const loginForm = document.getElementById('login-form');
+const authSection = document.getElementById('auth-section');
+const quoteSection = document.getElementById('quote-section');
+const welcomeMessage = document.getElementById('welcome-message');
+const quotesContainer = document.getElementById('quotes-container');
 
-        // Fonction d'affichage des citations
-        function renderQuotes() {
-            quotesContainer.innerHTML = '';
-            db.collection("quotes").get().then((querySnapshot) => {
-                querySnapshot.forEach((doc) => {
-                    const quote = doc.data();
-                    const quoteCard = document.createElement('div');
-                    quoteCard.classList.add('card', 'quote-card', 'mb-4', 'p-3', 'text-center', 'w-75');
-                    const quoteDate = new Date(quote.date.seconds * 1000).toLocaleString();
+// Fonction d'affichage des erreurs
+function displayError(message) {
+    alert(message); // Simple pour le moment, peut être remplacé par un affichage dans la page
+}
 
-                    let audioElement = '';
-                    if (quote.audio) {
-                        audioElement = `<audio controls><source src="${quote.audio}" type="audio/mpeg">Votre navigateur ne supporte pas l'élément audio.</audio>`;
-                    }
+// Gestion de la connexion
+loginForm.addEventListener('submit', function (event) {
+    event.preventDefault();
 
-                    quoteCard.innerHTML = `
-                        <div class="card-body">
-                            <blockquote class="blockquote mb-0">
-                                <p>${quote.text}</p>
-                                <footer class="blockquote-footer">${quote.author}</footer>
-                                <small class="text-muted">Ajoutée le: ${quoteDate}</small>
-                            </blockquote>
-                            ${audioElement}
-                        </div>
-                    `;
-                    quotesContainer.appendChild(quoteCard);
-                });
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            const user = userCredential.user;
+            if (user.email === "franckenock78@gmail.com") {
+                // Administrateur connecté
+                authSection.style.display = 'none';
+                welcomeMessage.style.display = 'block';
+                quoteSection.style.display = 'block';
+                renderQuotes();
+            } else {
+                alert("Accès refusé : Vous n'êtes pas administrateur !");
+                auth.signOut();
+            }
+        })
+        .catch((error) => {
+            console.error("Erreur lors de la connexion :", error);
+            displayError("Email ou mot de passe incorrect. Veuillez réessayer.");
+        });
+});
+
+// Affichage des citations
+function renderQuotes() {
+    quotesContainer.innerHTML = '';
+    db.collection("quotes")
+        .orderBy("date", "desc")
+        .get()
+        .then((querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+                const quote = doc.data();
+                const quoteCard = document.createElement('div');
+                quoteCard.classList.add('card', 'quote-card', 'mb-4', 'p-3', 'text-center', 'w-75');
+
+                const quoteDate = new Date(quote.date.seconds * 1000).toLocaleString();
+
+                let audioElement = '';
+                if (quote.audio) {
+                    audioElement = `<audio controls><source src="${quote.audio}" type="audio/mpeg">Votre navigateur ne supporte pas l'élément audio.</audio>`;
+                }
+
+                quoteCard.innerHTML = `
+                    <div class="card-body">
+                        <blockquote class="blockquote mb-0">
+                            <p>${quote.text}</p>
+                            <footer class="blockquote-footer">${quote.author}</footer>
+                            <small class="text-muted">Ajoutée le: ${quoteDate}</small>
+                        </blockquote>
+                        ${audioElement}
+                    </div>
+                `;
+                quotesContainer.appendChild(quoteCard);
             });
-        }
+        });
+}
 
         // Fonction pour ajouter une citation
         function addQuote(event) {
